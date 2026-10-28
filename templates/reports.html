@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Reports & Audits · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Consumption Reports & Validation Audits</h1>
+    <p class="muted">Analytical summaries calculated using Pandas period grouping, NumPy rate of change, and configurable threshold detection.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('export_monthly_csv') }}" class="btn btn-secondary">📥 Export Monthly CSV</a>
+  </div>
+</div>
+
+<!-- Dynamic Threshold Filter Tool -->
+<div class="panel filter-panel">
+  <form method="get" action="{{ url_for('reports') }}" class="threshold-form">
+    <label for="threshold">
+      <strong>High Usage Anomaly Threshold (kWh / month):</strong>
+    </label>
+    <div class="filter-inputs">
+      <input type="number" id="threshold" name="threshold" value="{{ threshold }}" step="10" min="10" required>
+      <button type="submit" class="btn btn-primary">Apply Threshold</button>
+      <a href="{{ url_for('reports') }}" class="btn btn-neutral">Reset Default ({{ default_threshold }} kWh)</a>
+    </div>
+  </form>
+</div>
+
+<!-- SECTION 1: Monthly Consumption by Consumer -->
+<div class="panel">
+  <div class="panel-header">
+    <h2>1. Monthly Consumption Summary (by Consumer)</h2>
+    <span class="badge badge-info">{{ monthly|length }} Records</span>
+  </div>
+  <p class="muted">Aggregated using Pandas <code>dt.to_period('M')</code>. Month-over-Month (MoM) change measures percentage fluctuation from preceding month.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Period (Month)</th>
+          <th>Consumer ID</th>
+          <th>Type</th>
+          <th>Region</th>
+          <th>Total Usage (kWh)</th>
+          <th>Interval Count</th>
+          <th>Daily Avg (kWh/day)</th>
+          <th>MoM Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in monthly %}
+          <tr {% if r.consumption_kwh >= threshold %}class="row-highlight"{% endif %}>
+            <td><strong>{{ r.month }}</strong></td>
+            <td>Consumer #{{ r.consumer_id }}</td>
+            <td><span class="type-tag type-{{ r.consumer_type|lower }}">{{ r.consumer_type }}</span></td>
+            <td>{{ r.region }}</td>
+            <td><strong>{{ "{:,.2f}".format(r.consumption_kwh) }}</strong> kWh</td>
+            <td>{{ r.reading_count }}</td>
+            <td>{{ "{:,.2f}".format(r.avg_daily_kwh) if r.avg_daily_kwh else '—' }}</td>
+            <td>
+              {% if r.mom_change_pct is not none and r.mom_change_pct == r.mom_change_pct %}
+                {% if r.mom_change_pct > 0 %}
+                  <span class="trend-up">▲ +{{ "{:.1f}".format(r.mom_change_pct) }}%</span>
+                {% elif r.mom_change_pct < 0 %}
+                  <span class="trend-down">▼ {{ "{:.1f}".format(r.mom_change_pct) }}%</span>
+                {% else %}
+                  <span class="muted">0.0%</span>
+                {% endif %}
+              {% else %}
+                <span class="muted">Baseline</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">No valid monthly intervals calculated yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 2: Yearly Usage Summary -->
+<div class="panel">
+  <div class="panel-header">
+    <h2>2. Yearly Consumption Summary</h2>
+    <span class="badge badge-info">{{ yearly|length }} Records</span>
+  </div>
+  <p class="muted">Aggregated using Pandas <code>dt.to_period('Y')</code> for long-term capacity and tariff planning.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Consumer ID</th>
+          <th>Classification</th>
+          <th>Region</th>
+          <th>Total Annual Usage (kWh)</th>
+          <th>Recorded Intervals</th>
+          <th>Avg Interval kWh</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for y in yearly %}
+          <tr>
+            <td><strong>{{ y.year }}</strong></td>
+            <td>Consumer #{{ y.consumer_id }}</td>
+            <td><span class="type-tag type-{{ y.consumer_type|lower }}">{{ y.consumer_type }}</span></td>
+            <td>{{ y.region }}</td>
+            <td><strong>{{ "{:,.2f}".format(y.total_consumption_kwh) }}</strong> kWh</td>
+            <td>{{ y.reading_count }}</td>
+            <td>{{ "{:,.2f}".format(y.avg_reading_kwh) }} kWh</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No yearly summary data available.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 3: High-Usage Anomaly Detection -->
+<div class="panel">
+  <div class="panel-header">
+    <h2>3. High-Usage Anomaly Detection</h2>
+    <span class="badge badge-alert">Threshold: ≥ {{ threshold }} kWh/Month</span>
+  </div>
+  <p class="muted">Consumers whose monthly aggregate demand meets or exceeds the defined threshold.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Consumer ID</th>
+          <th>Type</th>
+          <th>Region</th>
+          <th>Monthly Usage</th>
+          <th>Excess Over Threshold</th>
+          <th>Surge Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in high_usage %}
+          <tr class="row-alert">
+            <td><strong>{{ h.month }}</strong></td>
+            <td>Consumer #{{ h.consumer_id }}</td>
+            <td><span class="type-tag type-{{ h.consumer_type|lower }}">{{ h.consumer_type }}</span></td>
+            <td>{{ h.region }}</td>
+            <td><strong class="text-danger">{{ "{:,.2f}".format(h.consumption_kwh) }}</strong> kWh</td>
+            <td>+{{ "{:,.2f}".format(h.excess_kwh) }} kWh</td>
+            <td>
+              <span class="badge badge-alert">+{{ "{:.1f}".format(h.pct_above_threshold) }}% above</span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No consumers exceeded the threshold of {{ threshold }} kWh in any recorded month.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 4: Reading Validation and Rollover Audit Report -->
+<div class="panel">
+  <div class="panel-header">
+    <h2>4. Reading Validation & Rollover Audit Report</h2>
+    <span class="badge badge-neutral">{{ validation|length }} Flagged Events</span>
+  </div>
+  <p class="muted">Meter readings that cannot yield consecutive consumption without review (baselines, meter replacements, counter rollovers, or non-chronological dates).</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Meter Code</th>
+          <th>Reading Date</th>
+          <th>Cumulative kWh</th>
+          <th>Prior Reading Date</th>
+          <th>Prior kWh</th>
+          <th>Validation Flag</th>
+          <th>Diagnostic Audit Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in validation %}
+          <tr>
+            <td><code><strong>{{ v.meter_code }}</strong></code></td>
+            <td>{{ v.reading_date_str }}</td>
+            <td><strong>{{ "{:,.2f}".format(v.cumulative_kwh) }}</strong></td>
+            <td class="muted">{{ v.previous_date_str }}</td>
+            <td class="muted">{{ v.previous_kwh_display }}</td>
+            <td>
+              <span class="status-badge status-{{ v.status|replace(' ', '-')|replace('/', '-')|lower }}">
+                {{ v.status }}
+              </span>
+            </td>
+            <td class="audit-note">{{ v.audit_note }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No flagged validation events. All readings are valid consecutive sequences.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

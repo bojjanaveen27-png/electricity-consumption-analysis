@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Error · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 650px; margin: 40px auto; text-align: center; padding: 36px 24px;">
+  <div style="font-size: 3rem; margin-bottom: 12px;">⚠️</div>
+  <h1 style="color: #b91c1c; font-size: 1.6rem; margin-bottom: 12px;">System Notice</h1>
+  <p style="color: #334155; line-height: 1.6; margin-bottom: 24px;">{{ message }}</p>
+
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; font-size: 0.9rem; margin-bottom: 24px;">
+    <strong>Troubleshooting tips:</strong>
+    <ul style="margin: 8px 0 0 18px; padding: 0; color: #64748b; line-height: 1.6;">
+      <li>Ensure MySQL server is started if running in MySQL mode.</li>
+      <li>Check <code>.env</code> file credentials (DB_USER, DB_PASSWORD, DB_PORT).</li>
+      <li>Or switch to SQLite by setting <code>DB_ENGINE=sqlite</code> in <code>.env</code> for instant local execution.</li>
+    </ul>
+  </div>
+
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

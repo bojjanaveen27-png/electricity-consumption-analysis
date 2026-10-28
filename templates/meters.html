@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Meters · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Meter Hardware Records</h1>
+    <p class="muted">Link physical electricity meters with unique meter serial codes to consumers.</p>
+  </div>
+</div>
+
+<div class="panel form-panel">
+  <h2>Register New Meter</h2>
+  {% if consumers %}
+    <form method="post" class="standard-form">
+      <div class="form-group">
+        <label for="consumer_id">Assign To Consumer</label>
+        <select id="consumer_id" name="consumer_id" required>
+          <option value="" disabled selected>-- Select Consumer --</option>
+          {% for c in consumers %}
+            <option value="{{ c.consumer_id }}">
+              Consumer #{{ c.consumer_id }} ({{ c.consumer_type }} - {{ c.region }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="meter_code">Unique Meter Code / Serial</label>
+        <input type="text" id="meter_code" name="meter_code" placeholder="e.g. MTR-1005" required>
+      </div>
+
+      <div class="form-group form-action">
+        <button type="submit" class="btn btn-primary">+ Link Meter</button>
+      </div>
+    </form>
+  {% else %}
+    <p class="empty-state">Please register at least one consumer before adding a meter.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Registered Meters Directory</h2>
+    <span class="badge badge-neutral">{{ meters|length }} Active Meters</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Meter ID</th>
+          <th>Meter Code</th>
+          <th>Assigned Consumer</th>
+          <th>Consumer Type</th>
+          <th>Region</th>
+          <th>Logged Readings</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in meters %}
+          <tr>
+            <td>#{{ m.meter_id }}</td>
+            <td><code><strong>{{ m.meter_code }}</strong></code></td>
+            <td>Consumer #{{ m.consumer_id }}</td>
+            <td>
+              <span class="type-tag type-{{ m.consumer_type|lower }}">{{ m.consumer_type }}</span>
+            </td>
+            <td>{{ m.region }}</td>
+            <td>
+              <span class="badge badge-info">{{ m.reading_count }} reading(s)</span>
+            </td>
+            <td class="muted">{{ m.created_at }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No meters registered yet. Add one above!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

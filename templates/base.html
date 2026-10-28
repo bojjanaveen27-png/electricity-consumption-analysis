@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Electricity Consumption Analysis{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <a href="{{ url_for('dashboard') }}">⚡ Electricity Consumption Analysis</a>
+    <span class="db-pill db-{{ active_engine }}">DB: {{ active_engine|upper }}</span>
+  </div>
+  <nav>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('consumers_page') }}">Consumers</a>
+    <a href="{{ url_for('meters_page') }}">Meters</a>
+    <a href="{{ url_for('readings_page') }}">Readings</a>
+    <a href="{{ url_for('reports') }}">Reports & Audits</a>
+  </nav>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="footer-content">
+    <p><strong>Electricity Consumption Analysis System</strong> · Units: Kilowatt-hours (<strong>kWh</strong>)</p>
+    <p class="disclaimer">Analytical estimates only — consecutive cumulative readings are evaluated for trend and anomaly analysis and do not replace official billing calculations.</p>
+  </div>
+</footer>
+</body>
+</html>

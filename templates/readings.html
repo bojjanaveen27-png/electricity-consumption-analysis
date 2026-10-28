@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Meter Readings · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Meter Readings Log</h1>
+    <p class="muted">Record dated cumulative readings (in kWh). The system computes consecutive consumption intervals and checks validity.</p>
+  </div>
+</div>
+
+<div class="panel form-panel">
+  <h2>Record Dated Reading</h2>
+  {% if meters %}
+    <form method="post" class="standard-form">
+      <div class="form-group">
+        <label for="meter_id">Select Meter</label>
+        <select id="meter_id" name="meter_id" required>
+          <option value="" disabled selected>-- Choose Meter --</option>
+          {% for m in meters %}
+            <option value="{{ m.meter_id }}">
+              {{ m.meter_code }} ({{ m.consumer_type }} - {{ m.region }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="reading_date">Reading Date</label>
+        <input type="date" id="reading_date" name="reading_date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="cumulative_kwh">Cumulative Meter Reading (kWh)</label>
+        <input type="number" id="cumulative_kwh" name="cumulative_kwh" min="0" step="0.001" placeholder="e.g. 1450.5" required>
+      </div>
+
+      <div class="form-group form-action">
+        <button type="submit" class="btn btn-primary">+ Save Reading</button>
+      </div>
+    </form>
+    <div class="form-tip">
+      💡 <em>Rule:</em> Cumulative readings must be non-negative. If a dial rolls over (e.g. 99999 -> 100), the reading will be saved and flagged under <code>RESET/ROLLOVER REVIEW</code> for audit.
+    </div>
+  {% else %}
+    <p class="empty-state">Register at least one meter before entering readings.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Recent Readings History & Analytical Status</h2>
+    <span class="badge badge-neutral">{{ readings|length }} Entries Displayed</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Reading ID</th>
+          <th>Meter Code</th>
+          <th>Consumer</th>
+          <th>Reading Date</th>
+          <th>Cumulative kWh</th>
+          <th>Interval Consumption</th>
+          <th>Days</th>
+          <th>Validation Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in readings %}
+          <tr>
+            <td>#{{ r.reading_id }}</td>
+            <td><code><strong>{{ r.meter_code }}</strong></code></td>
+            <td>Consumer #{{ r.consumer_id }} ({{ r.region }})</td>
+            <td>{{ r.reading_date_str }}</td>
+            <td><strong>{{ "{:,.2f}".format(r.cumulative_kwh) }}</strong> kWh</td>
+            <td>
+              {% if r.status == 'VALID' %}
+                <span class="kwh-val">+{{ "{:,.2f}".format(r.consumption_kwh) }} kWh</span>
+              {% elif r.status == 'FIRST READING' %}
+                <span class="text-muted">Baseline (0)</span>
+              {% else %}
+                <span class="text-danger">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.days_between %}
+                {{ r.days_between|int }} days
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-badge status-{{ r.status|replace(' ', '-')|replace('/', '-')|lower }}">
+                {{ r.status }}
+              </span>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">No meter readings recorded yet. Record your first reading above!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

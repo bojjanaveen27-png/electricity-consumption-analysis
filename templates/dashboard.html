@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>System Dashboard</h1>
+    <p class="muted">Real-time electricity consumption KPIs, consecutive reading calculations, and usage trends.</p>
+  </div>
+  {% if kpis.readings == 0 %}
+    <form method="post" action="{{ url_for('seed_data_route') }}">
+      <button class="btn btn-secondary">⚡ Load Demo Sample Data</button>
+    </form>
+  {% endif %}
+</div>
+
+<!-- KPI Metric Cards -->
+<div class="cards">
+  <div class="card">
+    <span class="card-label">Registered Consumers</span>
+    <strong class="card-val">{{ kpis.consumers }}</strong>
+    <span class="card-sub">Residential & Commercial</span>
+  </div>
+  <div class="card">
+    <span class="card-label">Active Meters</span>
+    <strong class="card-val">{{ kpis.meters }}</strong>
+    <span class="card-sub">Unique meter codes</span>
+  </div>
+  <div class="card">
+    <span class="card-label">Recorded Readings</span>
+    <strong class="card-val">{{ kpis.readings }}</strong>
+    <span class="card-sub">Dated cumulative entries</span>
+  </div>
+  <div class="card card-accent">
+    <span class="card-label">Total Valid Consumption</span>
+    <strong class="card-val">{{ "{:,.2f}".format(kpis.total_kwh) }} <small>kWh</small></strong>
+    <span class="card-sub">Sum of consecutive intervals</span>
+  </div>
+  <div class="card">
+    <span class="card-label">Monthly Average</span>
+    <strong class="card-val">{{ "{:,.2f}".format(kpis.avg_monthly_kwh) }} <small>kWh</small></strong>
+    <span class="card-sub">Per consumer-month</span>
+  </div>
+  <div class="card card-alert">
+    <span class="card-label">High-Usage Incidents</span>
+    <strong class="card-val">{{ kpis.high_usage_count }}</strong>
+    <span class="card-sub">Above {{ threshold }} kWh</span>
+  </div>
+</div>
+
+<!-- Visualizations Grid -->
+<div class="charts-grid">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Monthly Consumption Trend</h2>
+      <span class="badge badge-info">Matplotlib Time-Series</span>
+    </div>
+    <div class="chart-container">
+      <img class="chart" src="{{ url_for('chart_trend') }}" alt="Monthly Electricity Consumption Trend">
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Consumer Usage Comparison</h2>
+      <span class="badge badge-info">Categorized by Type</span>
+    </div>
+    <div class="chart-container">
+      <img class="chart" src="{{ url_for('chart_consumer_comparison') }}" alt="Consumer Comparison Bar Chart">
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Regional Energy Distribution</h2>
+    <span class="badge badge-info">Geographic Breakdown</span>
+  </div>
+  <div class="chart-container" style="max-height: 380px;">
+    <img class="chart" src="{{ url_for('chart_regional') }}" alt="Regional Breakdown Chart" style="max-height: 360px;">
+  </div>
+</div>
+
+<!-- Calculation Assumptions and Boundaries Section -->
+<div class="panel info-callout">
+  <h2>Analytical Framework & Calculation Assumptions</h2>
+  <ul class="assumptions-list">
+    <li><strong>Cumulative Unit:</strong> All meter readings represent raw cumulative Kilowatt-hours (<strong>kWh</strong>).</li>
+    <li><strong>Interval Consumption:</strong> Consumption for interval \(i\) is calculated as \( \text{kWh}_i = \text{cumulative}_i - \text{cumulative}_{i-1} \).</li>
+    <li><strong>First Reading Rule:</strong> A meter's first recorded reading sets the cumulative baseline and yields no prior consumption.</li>
+    <li><strong>Meter Rollovers & Resets:</strong> If a subsequent reading is strictly lower than the preceding reading, the system marks the entry for <code>RESET/ROLLOVER REVIEW</code> and excludes it from automated consumption aggregation to prevent negative consumption distortion.</li>
+    <li><strong>Chronological Period Grouping:</strong> Period grouping allocates consumption to the calendar month of the interval's ending date.</li>
+    <li><strong>Threshold Alerts:</strong> Configurable threshold (currently <strong>{{ threshold }} kWh/month</strong>) detects surges and high-volume consumers.</li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Consumers · Electricity Consumption Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Consumer Records</h1>
+    <p class="muted">Manage utility consumers, classification types, and geographic regions.</p>
+  </div>
+</div>
+
+<div class="panel form-panel">
+  <h2>Add New Consumer</h2>
+  <form method="post" class="standard-form">
+    <div class="form-group">
+      <label for="consumer_type">Consumer Type</label>
+      <select id="consumer_type" name="consumer_type" required>
+        <option value="" disabled selected>-- Select Type --</option>
+        <option value="Residential">Residential</option>
+        <option value="Commercial">Commercial</option>
+        <option value="Industrial">Industrial</option>
+        <option value="Agricultural">Agricultural</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="region">Region / City</label>
+      <input type="text" id="region" name="region" placeholder="e.g. Nellore, Vijayawada" required>
+    </div>
+
+    <div class="form-group form-action">
+      <button type="submit" class="btn btn-primary">+ Register Consumer</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Registered Consumers Directory</h2>
+    <span class="badge badge-neutral">{{ consumers|length }} Total</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Consumer ID</th>
+          <th>Consumer Type</th>
+          <th>Region</th>
+          <th>Assigned Meters</th>
+          <th>Registration Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in consumers %}
+          <tr>
+            <td><strong>#{{ c.consumer_id }}</strong></td>
+            <td>
+              <span class="type-tag type-{{ c.consumer_type|lower }}">{{ c.consumer_type }}</span>
+            </td>
+            <td>{{ c.region }}</td>
+            <td>
+              <span class="meter-count-badge">{{ c.meter_count }} meter(s)</span>
+            </td>
+            <td class="muted">{{ c.created_at }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="empty-state">No consumers registered yet. Add one above!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
