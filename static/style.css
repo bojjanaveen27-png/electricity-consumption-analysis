@@ -602,7 +602,140 @@ footer strong {
   color: #64748b;
 }
 
+/* User Session & Auth in Header */
+.user-session {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-tag {
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+}
+
+.btn-nav {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btn-nav:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.btn-logout {
+  background: #b91c1c;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.btn-logout:hover {
+  background: #991b1b;
+}
+
+.auth-pill-status {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+/* Login Wrapper & Card */
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 65vh;
+  padding: 20px 0;
+}
+
+.login-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-icon {
+  font-size: 2.8rem;
+  margin-bottom: 10px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.btn-toggle-pw {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  opacity: 0.7;
+}
+
+.btn-toggle-pw:hover {
+  opacity: 1;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.login-footer {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.credential-tip {
+  font-size: 0.82rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+  line-height: 1.6;
+}
+
 /* Responsiveness */
+
 @media (max-width: 768px) {
   .charts-grid {
     grid-template-columns: 1fr;

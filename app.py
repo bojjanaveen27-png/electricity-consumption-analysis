@@ -18,11 +18,12 @@ import csv
 import pandas as pd
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, send_file, Response
+    flash, send_file, Response, session
 )
 import config
 from database import (
-    get_active_engine, execute_query, init_db, seed_sample_data
+    get_active_engine, execute_query, init_db, seed_sample_data,
+    verify_credentials, update_user_password
 )
 import analysis
 import visualization
@@ -36,6 +37,18 @@ try:
 except Exception as e:
     print(f"[Startup Warning] Could not initialize DB immediately: {e}")
 
+@app.before_request
+def check_authentication():
+    """
+    Security gate: Protects all system endpoints.
+    Unauthenticated users are immediately redirected to the login screen.
+    """
+    allowed_endpoints = {"login", "static"}
+    if request.endpoint and request.endpoint not in allowed_endpoints:
+        if not session.get("logged_in"):
+            # Preserve target URL to redirect after authentication
+            return redirect(url_for("login", next=request.path))
+
 @app.context_processor
 def inject_global_metadata():
     """
@@ -46,6 +59,84 @@ def inject_global_metadata():
         "default_threshold": config.DEFAULT_HIGH_USAGE_THRESHOLD_KWH,
         "kwh_unit": "kWh"
     }
+
+# ----------------- Authentication Routes -----------------
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """
+    Administrator / authorized user login page.
+    """
+    if session.get("logged_in"):
+        return redirect(url_for("dashboard"))
+
+    next_url = request.args.get("next", "")
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        user = verify_credentials(username, password)
+        if user:
+            session["logged_in"] = True
+            session["username"] = user["username"]
+            session.permanent = True
+            flash(f"Welcome, {user['username']}! Access granted.", "success")
+
+            # Validate next URL to avoid open redirect vulnerabilities
+            if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+                return redirect(next_url)
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Access denied: Invalid username or password.", "error")
+            return render_template("login.html", next_url=next_url, prefill_username=username)
+
+    return render_template("login.html", next_url=next_url)
+
+@app.route("/logout")
+def logout():
+    """
+    Terminates the active authenticated session.
+    """
+    session.clear()
+    flash("You have been signed out successfully.", "info")
+    return redirect(url_for("login"))
+
+@app.route("/change-password", methods=["GET", "POST"])
+def change_password():
+    """
+    Allows the authenticated user to update their login password.
+    """
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        username = session.get("username", config.ADMIN_USERNAME)
+        user = verify_credentials(username, current_password)
+        if not user:
+            flash("Current password is incorrect.", "error")
+            return render_template("change_password.html")
+
+        if len(new_password) < 6:
+            flash("New password must be at least 6 characters long.", "error")
+            return render_template("change_password.html")
+
+        if new_password != confirm_password:
+            flash("New password and confirmation do not match.", "error")
+            return render_template("change_password.html")
+
+        update_user_password(username, new_password)
+        flash("Password updated successfully! Your new password is now active.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("change_password.html")
+
+# ----------------- Dashboard & Analytics Routes -----------------
+
 
 @app.route("/")
 def dashboard():

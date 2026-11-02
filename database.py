@@ -9,6 +9,7 @@ import sqlite3
 import re
 import logging
 from datetime import date
+from werkzeug.security import generate_password_hash, check_password_hash
 import config
 
 logger = logging.getLogger(__name__)
@@ -143,6 +144,14 @@ def init_db():
                 CONSTRAINT chk_cumulative_kwh CHECK (cumulative_kwh >= 0),
                 INDEX idx_meter_date (meter_id, reading_date)
             ) ENGINE=InnoDB;
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
             """
         ]
         conn = get_connection()
@@ -187,6 +196,14 @@ def init_db():
             """,
             """
             CREATE INDEX IF NOT EXISTS idx_meter_date ON meter_readings(meter_id, reading_date);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
             """
         ]
         conn = get_connection()
@@ -198,6 +215,59 @@ def init_db():
             cur.close()
         finally:
             conn.close()
+
+    init_users_table()
+
+def init_users_table():
+    """Ensure default admin user exists in users table with secure password hash."""
+    try:
+        user_rows = execute_query("SELECT user_id FROM users WHERE username = %s", (config.ADMIN_USERNAME,))
+        if not user_rows:
+            hashed = generate_password_hash(config.ADMIN_PASSWORD)
+            execute_query(
+                "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
+                (config.ADMIN_USERNAME, hashed),
+                fetch=False
+            )
+            print(f"[AUTH] Default admin user '{config.ADMIN_USERNAME}' initialized.")
+    except Exception as e:
+        logger.warning(f"Error seeding default admin user: {e}")
+
+def verify_credentials(username, password):
+    """
+    Validates username and password against users table or .env admin fallback.
+    Returns dict with user info if valid, None otherwise.
+    """
+    if not username or not password:
+        return None
+
+    username = username.strip()
+    # 1. Check database users table
+    try:
+        rows = execute_query("SELECT * FROM users WHERE username = %s", (username,))
+        if rows:
+            user = rows[0]
+            if check_password_hash(user["password_hash"], password):
+                return {"user_id": user.get("user_id"), "username": user["username"]}
+    except Exception as e:
+        logger.warning(f"Database auth lookup error: {e}")
+
+    # 2. Fallback check against config / .env
+    if username == config.ADMIN_USERNAME and password == config.ADMIN_PASSWORD:
+        return {"user_id": 1, "username": config.ADMIN_USERNAME}
+
+    return None
+
+def update_user_password(username, new_password):
+    """Updates password hash for the specified user."""
+    hashed = generate_password_hash(new_password)
+    rows = execute_query("SELECT user_id FROM users WHERE username = %s", (username,))
+    if rows:
+        execute_query("UPDATE users SET password_hash = %s WHERE username = %s", (hashed, username), fetch=False)
+    else:
+        execute_query("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, hashed), fetch=False)
+    return True
+
 
 def seed_sample_data():
     """

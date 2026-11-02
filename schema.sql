@@ -39,6 +39,15 @@ CREATE TABLE IF NOT EXISTS meter_readings (
     INDEX idx_meter_date (meter_id, reading_date)
 ) ENGINE=InnoDB;
 
+-- 4. Users / Authentication Entity
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+
 -- ====================================================================
 -- Sample Seed Data for Demonstration & Testing
 -- ====================================================================

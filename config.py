@@ -24,6 +24,10 @@ DB_NAME = os.getenv("DB_NAME", "electricity_analysis")
 # SQLite Database File (used when DB_ENGINE=sqlite or on automatic fallback)
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", os.path.join(os.path.dirname(__file__), "electricity_analysis.db"))
 
+# Security & Access Control
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@123")
+
 # Application & Analytical Parameters
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "electricity-analysis-secret-key-2026")
 FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
@@ -31,3 +35,4 @@ FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
 
 # Analytical threshold for flagging unusually high monthly usage (in kWh)
 DEFAULT_HIGH_USAGE_THRESHOLD_KWH = float(os.getenv("HIGH_USAGE_THRESHOLD_KWH", "500.0"))
+
