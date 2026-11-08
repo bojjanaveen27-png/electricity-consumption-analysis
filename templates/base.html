@@ -9,11 +9,10 @@
 <body>
 <header>
   <div class="brand">
-    <a href="{{ url_for('dashboard') if session.logged_in else url_for('login') }}">⚡ Electricity Consumption Analysis</a>
+    <a href="{{ url_for('dashboard') }}">⚡ Electricity Consumption Analysis</a>
     <span class="db-pill db-{{ active_engine }}">DB: {{ active_engine|upper }}</span>
   </div>
 
-  {% if session.logged_in %}
   <nav>
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
     <a href="{{ url_for('consumers_page') }}">Consumers</a>
@@ -21,17 +20,6 @@
     <a href="{{ url_for('readings_page') }}">Readings</a>
     <a href="{{ url_for('reports') }}">Reports & Audits</a>
   </nav>
-
-  <div class="user-session">
-    <span class="user-tag" title="Authenticated User">👤 {{ session.username }}</span>
-    <a href="{{ url_for('change_password') }}" class="btn-nav" title="Security Settings">⚙️ Key</a>
-    <a href="{{ url_for('logout') }}" class="btn-logout" title="Sign out">Logout</a>
-  </div>
-  {% else %}
-  <div class="auth-pill-status">
-    <span>🔒 Secure Portal</span>
-  </div>
-  {% endif %}
 </header>
 
 <main>
